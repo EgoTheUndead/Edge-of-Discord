@@ -10,7 +10,7 @@ from psd_tools import PSDImage
 from tabletop_simulator import tabletop_utils
 
 tiles_path = "output/tiles"
-use_local_images = True
+use_local_images = False
 
 all_object_layers = set()
 
