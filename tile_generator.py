@@ -93,8 +93,9 @@ def process_file(csv_path):
 
             target_object["CustomImage"]["ImageURL"] = image_game_url
 
-            with open('game.json', encoding="utf8", mode='w') as f:
-                f.write(json.dumps(data, indent=2))
+            with open('game.json', mode='w', encoding="utf8") as f:
+
+                f.write(json.dumps(data, indent=2, ensure_ascii=False))
 
     print_layers()
 
