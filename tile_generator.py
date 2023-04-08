@@ -40,7 +40,7 @@ def update_visibility(psd: PSDImage, visible_layers: list[str]):
 
 
 def get_layer_name(item_name: str, ordinal: int):
-    return f"{item_name.upper()}_{ordinal}"
+    return f"{item_name}_{ordinal}"
 
 
 def write_json(filename, data):
