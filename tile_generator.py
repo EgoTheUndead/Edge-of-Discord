@@ -2,11 +2,29 @@ import json
 import csv
 import os
 from pathlib import Path
+import re
 
 import psd_tools.api.layers
 from psd_tools import PSDImage
 
+from tabletop_simulator import tabletop_utils
+
 tiles_path = "output/tiles"
+use_local_images = True
+
+all_object_layers = set()
+
+
+def print_layers():
+    layers = set()
+    for layer in all_object_layers:
+        layers.add(re.sub(r"_\d", '', layer))
+
+    layers_sorted = list(layers)
+    layers_sorted.sort()
+
+    for name in layers_sorted:
+        print(name)
 
 
 def update_visibility(psd: PSDImage, visible_layers: list[str]):
@@ -14,6 +32,7 @@ def update_visibility(psd: PSDImage, visible_layers: list[str]):
         if isinstance(layer, psd_tools.api.layers.Group):
             layer.visible = True
             for sublayer in layer:
+                all_object_layers.add(sublayer.name)
                 sublayer.visible = sublayer.name in visible_layers
 
         else:
@@ -24,14 +43,13 @@ def get_layer_name(item_name: str, ordinal: int):
     return f"{item_name.upper()}_{ordinal}"
 
 
-def process_file():
-    tile_table = {}
+def process_file(csv_path):
     psd = PSDImage.open('assets/tile_template.psd')
 
-    with open('game_source.json', encoding="utf8") as f:
+    with open('game.json', encoding="utf8") as f:
         data = json.load(f)
 
-    with open('csv_files/continent_port_tiles.csv', mode='r', encoding="utf8") as f:
+    with open(csv_path, mode='r', encoding="utf8") as f:
         reader = csv.reader(f)
         first_line = True
         for row in reader:
@@ -58,11 +76,28 @@ def process_file():
             def should_output_layer(layer):
                 print(f"{layer.name}")
 
-            image = psd.composite(layer_filter=lambda layer : layer.name in visible_layers)
+            image = psd.composite(layer_filter=lambda layer: layer.name in visible_layers)
 
             Path(tiles_path).mkdir(parents=True, exist_ok=True)
-            image.save(os.path.join(tiles_path, f"{guid}.png"))
+            image_name = f"{guid}.png"
+            image_local_path = os.path.join(tiles_path, image_name)
+
+            image.save(image_local_path)
+
+            target_object = tabletop_utils.get_object_by_guid(data, guid)
+
+            if use_local_images:
+                image_game_url = os.path.abspath(image_local_path)
+            else:
+                image_game_url = "https://raw.githubusercontent.com/EgoTheUndead/Edge-of-Discord/main/output/tiles/"+image_name
+
+            target_object["CustomImage"]["ImageURL"] = image_game_url
+
+            with open('game.json', encoding="utf8", mode='w') as f:
+                f.write(json.dumps(data, indent=2))
+
+    print_layers()
 
 
 if __name__ == "__main__":
-    process_file()
+    process_file('csv_files/continent_port_tiles.csv')
