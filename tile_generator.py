@@ -6,6 +6,7 @@ import re
 
 import psd_tools.api.layers
 from psd_tools import PSDImage
+import openpyxl
 
 from tabletop_simulator import tabletop_utils
 
@@ -49,60 +50,79 @@ def write_json(filename, data):
         json_string = re.sub(r"(\d+\.\d+)e(-?\d\d)", r"\1E\2", json_string)
         f.write(json_string)
 
-def process_file(csv_path):
+
+def generate_tile(json_data, guid, visible_layers):
+    if guid is None:
+        return
+
+
     psd = PSDImage.open('assets/tile_template.psd')
 
+    update_visibility(psd, visible_layers)
+
+    image = psd.composite(layer_filter=lambda layer: layer.name in visible_layers)
+
+    Path(tiles_path).mkdir(parents=True, exist_ok=True)
+    image_name = f"{guid}.png"
+    image_local_path = os.path.join(tiles_path, image_name)
+    image.save(image_local_path)
+    if use_local_images:
+        image_game_url = os.path.abspath(image_local_path)
+    else:
+        image_game_url = "https://raw.githubusercontent.com/EgoTheUndead/Edge-of-Discord/main/output/tiles/"+image_name
+
+    target_object = tabletop_utils.get_object_by_guid(json_data, guid)
+    target_object["CustomImage"]["ImageURL"] = image_game_url
+
+
+def process_worksheet(json_data, worksheet):
+    first_line = True
+    for row in worksheet.rows:
+        if first_line:
+            first_line = False
+            continue
+
+        visible_layers = ["ОСНОВА", "СЕКЦИИ", "ЛАНДШАФТЫ", "МЕСТА", "ОБЪЕКТЫ", "СТОЛИЦЫ"]
+
+        guid = row[0].value
+        # tile type and icon
+        visible_layers.append(get_layer_name(row[2].value, 1))
+        visible_layers.append(get_layer_name(row[3].value, 1))
+
+        # tile type and icon
+        visible_layers.append(get_layer_name(row[4].value, 2))
+        visible_layers.append(get_layer_name(row[5].value, 2))
+
+        # tile type and icon
+        visible_layers.append(get_layer_name(row[6].value, 3))
+        visible_layers.append(get_layer_name(row[7].value, 3))
+
+        generate_tile(json_data, guid, visible_layers)
+
+def process_workbook(filename):
+    workbook = openpyxl.load_workbook(filename)
     with open('game.json', encoding="utf8") as f:
-        data = json.load(f)
+        json_data = json.load(f)
 
-    with open(csv_path, mode='r', encoding="utf8") as f:
-        reader = csv.reader(f)
-        first_line = True
-        for row in reader:
-            if first_line:
-                first_line = False
-                continue
+    sheets_to_process = [
+        "island_port_tiles",
+        "island_tiles",
+        "continent_tiles",
+        "continent_port_tiles",
+        "dungeons",
+        "dungeons2",
+        "dungeons3",
+        "starting_tiles",
+    ]
 
-            guid = row[0]
-            visible_layers = ["ОСНОВА", "СЕКЦИИ", "ЛАНДШАФТЫ", "МЕСТА", "ОБЪЕКТЫ", "СТОЛИЦЫ"]
-            # tile type and icon
-            visible_layers.append(get_layer_name(row[2], 1))
-            visible_layers.append(get_layer_name(row[3], 1))
+    for sheet_name in sheets_to_process:
+        worksheet = workbook[sheet_name]
+        process_worksheet(json_data, worksheet)
 
-            # tile type and icon
-            visible_layers.append(get_layer_name(row[4], 2))
-            visible_layers.append(get_layer_name(row[5], 2))
-
-            # tile type and icon
-            visible_layers.append(get_layer_name(row[6], 3))
-            visible_layers.append(get_layer_name(row[7], 3))
-
-            update_visibility(psd, visible_layers)
-
-            def should_output_layer(layer):
-                print(f"{layer.name}")
-
-            image = psd.composite(layer_filter=lambda layer: layer.name in visible_layers)
-
-            Path(tiles_path).mkdir(parents=True, exist_ok=True)
-            image_name = f"{guid}.png"
-            image_local_path = os.path.join(tiles_path, image_name)
-
-            image.save(image_local_path)
-
-            target_object = tabletop_utils.get_object_by_guid(data, guid)
-
-            if use_local_images:
-                image_game_url = os.path.abspath(image_local_path)
-            else:
-                image_game_url = "https://raw.githubusercontent.com/EgoTheUndead/Edge-of-Discord/main/output/tiles/"+image_name
-
-            target_object["CustomImage"]["ImageURL"] = image_game_url
-
-            write_json('game.json', data)
-
+    write_json('game.json', json_data)
     print_layers()
 
 
 if __name__ == "__main__":
-    process_file('csv_files/continent_port_tiles.csv')
+    #process_file('csv_files/continent_port_tiles.csv')
+    process_workbook("tiles.xlsx")

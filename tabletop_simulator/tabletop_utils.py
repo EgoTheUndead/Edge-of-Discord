@@ -23,8 +23,8 @@ def get_object_by_guid(tabletop_json, guid):
             return item
 
         if 'States' in item:
-            for index, state in item["States"]:
+            for index, state in item["States"].items():
                 if state["GUID"] == guid:
-                    return item
+                    return state
 
     raise Exception(f"Object with guid {guid} not found")
