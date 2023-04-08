@@ -21,3 +21,10 @@ def get_object_by_guid(tabletop_json, guid):
     for item in tabletop_json["ObjectStates"]:
         if item["GUID"] == guid:
             return item
+
+        if 'States' in item:
+            for index, state in item["States"]:
+                if state["GUID"] == guid:
+                    return item
+
+    raise Exception(f"Object with guid {guid} not found")

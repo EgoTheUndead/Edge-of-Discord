@@ -1,6 +1,7 @@
 import json
 import csv
 import requests
+from pathlib import Path
 
 from tabletop_simulator import tabletop_utils
 
@@ -31,27 +32,30 @@ def write_csv(filename, tiles):
         writer.writerows(tiles)
 
 def process_file():
-    with open('game_source.json', encoding="utf8") as f:
+    with open('game.json', encoding="utf8") as f:
         data = json.load(f)
-    continent_tiles = []
-    continent_port_tiles = []
-    island_tiles = []
-    island_port_tiles = []
+
+    tile_groups = [
+        {"tag":"continent", "file":"_continent_tiles.csv", "tiles":[]},
+        {"tag": "continent_port", "file": "_continent_port_tiles.csv", "tiles":[]},
+        {"tag": "island", "file": "_island_tiles.csv", "tiles":[]},
+        {"tag": "island_port", "file": "_island_port_tiles.csv", "tiles":[]},
+
+        {"tag": "dungeon", "file": "_dungeons.csv", "tiles": []},
+        {"tag": "dungeon2", "file": "_dungeons2.csv", "tiles": []},
+        {"tag": "dungeon3", "file": "_dungeons3.csv", "tiles": []}
+    ]
 
     for item in data["ObjectStates"]:
-        if tabletop_utils.is_hex_tile(item, "continent"):
-            append_tile_record(continent_tiles,item)
-        if tabletop_utils.is_hex_tile(item,"continent_port"):
-            append_tile_record(continent_port_tiles,item)
-        if tabletop_utils.is_hex_tile(item, "island"):
-            append_tile_record(island_tiles, item)
-        if tabletop_utils.is_hex_tile(item, "island_port"):
-            append_tile_record(island_port_tiles, item)
+        for tile_group in tile_groups:
+            if tabletop_utils.is_hex_tile(item, tile_group["tag"]):
+                append_tile_record(tile_group["tiles"], item)
 
-    write_csv('csv_files/_continent_tiles.csv', continent_tiles)
-    write_csv('csv_files/_continent_port_tiles.csv', continent_port_tiles)
-    write_csv('csv_files/_island_tiles.csv', island_tiles)
-    write_csv('csv_files/_island_port_tiles.csv', island_port_tiles)
+    csv_files_folder = "output/csv_files/"
+    Path("output/csv_files/").mkdir(parents=True, exist_ok=True)
+    for tile_group in tile_groups:
+        write_csv(csv_files_folder + tile_group["file"], tile_group["tiles"])
+
 
 
 if __name__ == "__main__":
