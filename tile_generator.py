@@ -43,6 +43,12 @@ def get_layer_name(item_name: str, ordinal: int):
     return f"{item_name.upper()}_{ordinal}"
 
 
+def write_json(filename, data):
+    with open(filename, mode='w', encoding="utf8") as f:
+        json_string = json.dumps(data, indent=2, ensure_ascii=False)
+        json_string = re.sub(r"(\d+\.\d+)e(-?\d\d)", r"\1E\2", json_string)
+        f.write(json_string)
+
 def process_file(csv_path):
     psd = PSDImage.open('assets/tile_template.psd')
 
@@ -93,9 +99,7 @@ def process_file(csv_path):
 
             target_object["CustomImage"]["ImageURL"] = image_game_url
 
-            with open('game.json', mode='w', encoding="utf8") as f:
-
-                f.write(json.dumps(data, indent=2, ensure_ascii=False))
+            write_json('game.json', data)
 
     print_layers()
 
