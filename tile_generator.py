@@ -46,12 +46,6 @@ def get_layer_name(item_name: str, ordinal: int):
     return f"{item_name}_{ordinal}"
 
 
-def write_json(filename, data):
-    with open(filename, mode='w', encoding="utf8") as f:
-        json_string = json.dumps(data, indent=2, ensure_ascii=False)
-        json_string = re.sub(r"(\d+\.\d+)e(-?\d\d)", r"\1E\2", json_string)
-        f.write(json_string)
-
 
 def generate_tile(json_data, guid, visible_layers):
     if guid is None:
@@ -128,10 +122,10 @@ def process_workbook(filename):
         worksheet = workbook[sheet_name]
         process_worksheet(json_data, worksheet)
 
-    write_json('game.json', json_data)
+    tabletop_utils.write_json('game.json', json_data)
     print_layers()
 
 
 if __name__ == "__main__":
     # process_file('csv_files/continent_port_tiles.csv')
-    process_workbook("tiles.xlsx")
+    process_workbook("assets/tiles.xlsx")

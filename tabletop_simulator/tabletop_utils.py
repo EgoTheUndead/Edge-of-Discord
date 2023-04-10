@@ -1,3 +1,6 @@
+import json
+import re
+
 kCustomTokenName = "Custom_Token"
 kTags = "Tags"
 kName = "Name"
@@ -28,3 +31,9 @@ def get_object_by_guid(tabletop_json, guid):
                     return state
 
     raise Exception(f"Object with guid {guid} not found")
+
+def write_json(filename, data):
+    with open(filename, mode='w', encoding="utf8") as f:
+        json_string = json.dumps(data, indent=2, ensure_ascii=False)
+        json_string = re.sub(r"(\d+\.\d+)e(-?\d\d)", r"\1E\2", json_string)
+        f.write(json_string)
