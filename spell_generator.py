@@ -9,7 +9,7 @@ from tabletop_simulator import tabletop_utils
 
 
 def get_html(replacements : dict[str,str]):
-    with open('assets/sample.html', encoding="utf8") as f:
+    with open('assets/spell_card.html', encoding="utf8") as f:
         html_template = Template(f.readlines())
         return html_template.substitute(replacements)
 
@@ -49,4 +49,4 @@ def process_workbook(filename):
 
 if __name__ == "__main__":
     # process_file('csv_files/continent_port_tiles.csv')
-    process_workbook("assets/tiles.xlsx")
+    process_workbook("assets/spells.xlsx")
